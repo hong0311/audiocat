@@ -1,93 +1,123 @@
 # AudioCat
 
-[![npm version](https://badge.fury.io/js/audiocat.svg)](https://badge.fury.io/js/audiocat)
-[![CI](https://github.com/yourusername/audiocat/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/audiocat/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/yourusername/audiocat/badge.svg?branch=main)](https://coveralls.io/github/yourusername/audiocat?branch=main)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm version](https://img.shields.io/npm/v/audiocat.svg)](https://www.npmjs.com/package/audiocat)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A modern TypeScript library for audio processing in Node.js environments.
+Low-CPU audio stitching for Node.js. Concatenate WAV or MP3 segments (optionally with fixed gaps) without decoding or re-encoding. No ffmpeg required.
 
-## Features
+- WAV: stream-copy PCM, write a single correct RIFF header, synthesize silence as zeroed PCM
+- MP3: stream-append frames, optional pre-encoded silence assets for gaps
+- Strict fail-fast validation: all segments must share core parameters
+- Stream-first design; constant memory; Node 18+
 
-- Written in TypeScript with full type safety
-- ESM and CommonJS dual package support
-- Comprehensive test coverage
-- Node.js 18+ support
-
-## Installation
+## Install
 
 ```bash
 npm install audiocat
 ```
 
-## Quick Start
+## Quick start
 
-```typescript
-import { processAudio } from 'audiocat';
+```ts
+import { stitch, probe } from 'audiocat';
 
-const result = await processAudio(buffer, options);
+// Two (or more) segments as Buffers or file paths
+const parts = [Buffer.from(/* ... */), '/path/to/segment2.mp3'];
+
+// Write to a file with a 1s gap between parts
+await stitch(parts, { gapMs: 1000, output: { type: 'file', path: './output.mp3' } });
+
+// Or get the result in-memory
+const buf = await stitch(parts, { gapMs: 0, output: { type: 'buffer' } });
+
+// Probe metadata
+const info = await probe(parts[0]);
+// → { container: 'mp3', sampleRate: 44100, channels: 2, bitrateKbps?: number, vbr: boolean }
 ```
 
-## Requirements
+## API
 
-- Node.js >= 18.0.0
-- npm or yarn or pnpm
+### Types
+
+- `AudioSource`: `Buffer | Uint8Array | string` (file path)
+- `OutputTarget`: `{ type: 'buffer' } | { type: 'file', path: string }`
+
+### Functions
+
+- `probe(source: AudioSource): Promise<ProbeInfo>`
+  - Uses `music-metadata` to read core parameters
+  - Returns:
+    - WAV: `{ container: 'wav', sampleRate, channels, bitsPerSample }`
+    - MP3: `{ container: 'mp3', sampleRate, channels, bitrateKbps?, vbr }`
+
+- `stitch(sources: AudioSource[], options: StitchOptions): Promise<Buffer | void>`
+  - Convenience wrapper: probes first source and dispatches to WAV/MP3 stitchers
+
+- `stitchWav(sources: AudioSource[], options: StitchWavOptions): Promise<Buffer | void>`
+  - Requirements: all inputs share `sampleRate`, `channels`, `bitsPerSample`
+  - Gap handling: writes zero-valued PCM bytes for `gapMs`
+
+- `stitchMp3(sources: AudioSource[], options: StitchMp3Options): Promise<Buffer | void>`
+  - Requirements: all inputs share `sampleRate`, `channels`, and (ideally) bitrate/profile
+  - Gap handling: inserts pre-encoded CBR silence assets (see Assets)
+  - Options:
+    - `gapMs?: number` (default 0)
+    - `output: OutputTarget`
+    - `silence?: Buffer | Uint8Array | string` (override built-in silence)
+    - `keepFirstId3?: boolean` (default true)
+    - `gapRounding?: 'nearest' | 'floor' | 'ceil'` (frame-quantized)
+
+## Assets (MP3 silence)
+
+MP3 gaps are implemented by appending pre-encoded CBR silence frames. The library bundles short 0.1s assets and repeats them to achieve the requested `gapMs`.
+
+- Path (relative to library): `assets/silence/mp3/<sampleRate>/<mono|stereo>/<bitrate>.mp3`
+- Bundled presets: 44100 and 48000 Hz; mono/stereo; 128k, 192k, 320k
+- If a matching asset is missing, pass `silence` in options or change your encoder output to a supported preset.
+
+WAV gaps are synthesized (zero PCM), so no assets are required.
+
+## Design notes
+
+- No decoding/re-encoding; CPU usage stays minimal
+- Streaming I/O in small chunks (64KB) for constant memory
+- Strict validation; fail fast on parameter mismatch
+- Probing: `music-metadata` for robust header parsing
+
+## Examples (TTS scripts)
+
+See `src/scripts/` for minimal Gemini and ElevenLabs examples (not published to npm). Build first, then run:
+
+```bash
+npm run build
+node dist/scripts/sample-gemini.js
+node dist/scripts/sample-elevenlabs.js
+```
+
+Set the required environment variables as described in `src/scripts/README.md`.
+
+## Limitations
+
+- No resampling, normalization, trimming, or crossfade
+- MP3 gapless playback is not guaranteed (frame-quantized gaps)
+- Inputs must be homogeneous per format (sample rate/channels/bits or bitrate)
 
 ## Development
 
-### Setup
-
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/audiocat.git
-cd audiocat
-
-# Install dependencies
+# Install deps
 npm install
-```
 
-### Available Scripts
+# Lint & typecheck
+npm run lint && npm run typecheck
 
-```bash
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Build the library
+# Build
 npm run build
 
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-
-# Type check
-npm run typecheck
+# Test
+npm test
 ```
-
-### Project Structure
-
-```
-audiocat/
-├── src/           # Source code
-│   ├── index.ts   # Main entry point
-│   └── *.test.ts  # Test files
-├── dist/          # Built output (generated)
-├── coverage/      # Test coverage reports (generated)
-└── docs/          # Documentation
-```
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For support, please open an issue in the [GitHub repository](https://github.com/yourusername/audiocat/issues).
+MIT © Contributors
