@@ -45,12 +45,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/audiocat.git"
+    "url": "git+https://github.com/hong0311/audiocat.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/audiocat/issues"
+    "url": "https://github.com/hong0311/audiocat/issues"
   },
-  "homepage": "https://github.com/yourusername/audiocat#readme",
+  "homepage": "https://github.com/hong0311/audiocat#readme",
   "engines": {
     "node": ">=18.0.0"
   },
