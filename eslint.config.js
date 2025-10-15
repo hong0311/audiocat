@@ -27,6 +27,9 @@ export default [
     rules: {
       ...tsPlugin.configs['recommended-type-checked'].rules,
       ...tsPlugin.configs['stylistic-type-checked'].rules,
+      // Disable base rule for TypeScript files (conflicts with overloads)
+      'no-redeclare': 'off',
+      '@typescript-eslint/no-redeclare': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {

@@ -26,6 +26,14 @@ function createWavHeader(totalDataBytes: number, info: WavProbeInfo): Buffer {
 
 export async function stitchWav(
   sources: AudioSource[],
+  options: StitchWavOptions & { output: { type: 'buffer' } },
+): Promise<Buffer>;
+export async function stitchWav(
+  sources: AudioSource[],
+  options: StitchWavOptions & { output: { type: 'file'; path: string } },
+): Promise<void>;
+export async function stitchWav(
+  sources: AudioSource[],
   options: StitchWavOptions,
 ): Promise<Buffer | void> {
   if (!sources.length) throw new Error('No sources provided');

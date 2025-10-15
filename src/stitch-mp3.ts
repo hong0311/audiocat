@@ -53,6 +53,14 @@ function loadSilenceAsset(info: Mp3ProbeInfo, opts: StitchMp3Options): Buffer {
 
 export async function stitchMp3(
   sources: AudioSource[],
+  options: StitchMp3Options & { output: { type: 'buffer' } },
+): Promise<Buffer>;
+export async function stitchMp3(
+  sources: AudioSource[],
+  options: StitchMp3Options & { output: { type: 'file'; path: string } },
+): Promise<void>;
+export async function stitchMp3(
+  sources: AudioSource[],
   options: StitchMp3Options,
 ): Promise<Buffer | void> {
   if (!sources.length) throw new Error('No sources provided');

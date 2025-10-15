@@ -7,6 +7,14 @@ export type StitchOptions = StitchMp3Options; // superset of WAV options
 
 export async function stitch(
   sources: AudioSource[],
+  options: StitchOptions & { output: { type: 'buffer' } },
+): Promise<Buffer>;
+export async function stitch(
+  sources: AudioSource[],
+  options: StitchOptions & { output: { type: 'file'; path: string } },
+): Promise<void>;
+export async function stitch(
+  sources: AudioSource[],
   options: StitchOptions,
 ): Promise<Buffer | void> {
   if (!sources.length) throw new Error('No sources provided');
