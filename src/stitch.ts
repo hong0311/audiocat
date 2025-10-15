@@ -20,10 +20,10 @@ export async function stitch(
   if (!sources.length) throw new Error('No sources provided');
   const info = await probe(sources[0]!);
   if (info.container === 'mp3') {
-    return stitchMp3(sources, options);
+    return stitchMp3(sources, options as never);
   }
   if (info.container === 'wav') {
-    return stitchWav(sources, options);
+    return stitchWav(sources, options as never);
   }
   throw new Error('Unsupported container');
 }
