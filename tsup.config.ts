@@ -11,7 +11,7 @@ export default defineConfig({
   minify: false,
   target: 'node18',
   outDir: 'dist',
-  shims: true,
+  shims: false,
   cjsInterop: true,
   legacyOutput: false,
 });

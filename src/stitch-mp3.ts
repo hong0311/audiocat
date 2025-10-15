@@ -38,7 +38,11 @@ function loadSilenceAsset(info: Mp3ProbeInfo, opts: StitchMp3Options): Buffer {
   const channelMode: 'mono' | 'stereo' = info.channels === 1 ? 'mono' : 'stereo';
   const bitrateNum = info.bitrateKbps ?? 128;
   const bitrate = `${bitrateNum}k`;
-  const here = path.dirname(fileURLToPath(import.meta.url));
+  // Support both CJS and ESM
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore __dirname is available in CJS
+  const here =
+    typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
   const assetPath = path.resolve(
     here,
     `../assets/silence/mp3/${info.sampleRate}/${channelMode}/${bitrate}.mp3`,
